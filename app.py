@@ -1,896 +1,534 @@
 import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from wordcloud import WordCloud
-import plotly.express as px
-import plotly.graph_objects as go
 from pathlib import Path
+from PIL import Image
+import base64
 
-# --------------------------------------------------
-# Page Config
-# --------------------------------------------------
-st.set_page_config(page_title="🧳 Travel Packages Insights", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Incredible India 🌏", layout="wide", initial_sidebar_state="collapsed")
 
-# --------------------------------------------------
-# Enhanced CSS Styling
-# --------------------------------------------------
+# --------------------- CSS ---------------------
 st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap');
-    
-    * {
-        font-family: 'Poppins', sans-serif;
+<style>
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap');
+
+* {
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Page main content */
+div[data-testid="stAppViewContainer"] > .main {
+    margin-top: 100px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+}
+
+/* Navbar styling */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 9999;
+    background: linear-gradient(135deg, rgba(255,102,0,0.95), rgba(255,204,0,0.95));
+    padding: 15px 40px;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2);
+    backdrop-filter: blur(10px);
+}
+
+.navbar-brand {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.navbar-links {
+    display: flex;
+    gap: 25px;
+}
+
+.nav-btn {
+    background: rgba(255,255,255,0.2);
+    padding: 10px 24px;
+    border-radius: 30px;
+    color: white;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 2px solid rgba(255,255,255,0.3);
+    backdrop-filter: blur(5px);
+}
+
+.nav-btn:hover {
+    background: white;
+    color: #ff6600;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* Hero Section */
+.hero-section {
+    text-align: center;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,248,240,0.9));
+    border-radius: 20px;
+    margin-bottom: 40px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+}
+
+.animated-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, #ff6600, #ffcc00, #ff0099, #6600ff);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientShift 8s ease infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.subtitle {
+    font-size: 1.3rem;
+    color: #555;
+    margin: 20px 0;
+    font-weight: 300;
+}
+
+.typewriter {
+    max-width: 900px;
+    margin: 25px auto;
+    font-size: 1.1rem;
+    color: #4a2c15;
+    padding: 15px;
+    background: rgba(255,248,220,0.7);
+    border-left: 4px solid #ff6600;
+    border-radius: 8px;
+}
+
+/* Stats Section */
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin: 40px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #ff6600, #ffcc00);
+    padding: 25px;
+    border-radius: 15px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 8px 20px rgba(255,102,0,0.3);
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px) scale(1.02);
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 1rem;
+    font-weight: 400;
+    opacity: 0.95;
+}
+
+/* Gallery Section */
+.gallery-header {
+    text-align: center;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #333;
+    margin: 50px 0 30px 0;
+    position: relative;
+}
+
+.gallery-header::after {
+    content: '';
+    display: block;
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(90deg, #ff6600, #ffcc00);
+    margin: 15px auto;
+    border-radius: 2px;
+}
+
+/* Image styling */
+div[data-testid="stImage"] {
+    transition: transform 0.3s ease;
+}
+
+div[data-testid="stImage"] img {
+    border-radius: 20px;
+    transition: all 0.4s ease;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    border: 3px solid white;
+}
+
+div[data-testid="stImage"]:hover img {
+    transform: translateY(-10px) scale(1.05);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+}
+
+.img-caption {
+    text-align: center;
+    font-weight: 600;
+    margin-top: 12px;
+    color: #333;
+    font-size: 1.1rem;
+    padding: 8px;
+    background: rgba(255,255,255,0.8);
+    border-radius: 8px;
+    backdrop-filter: blur(5px);
+}
+
+/* Features Section */
+.features-section {
+    background: linear-gradient(135deg, rgba(102,0,255,0.05), rgba(255,0,153,0.05));
+    padding: 50px 20px;
+    border-radius: 20px;
+    margin: 50px 0;
+}
+
+.feature-card {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+    border: 2px solid transparent;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    border-color: #ff6600;
+    box-shadow: 0 10px 30px rgba(255,102,0,0.2);
+}
+
+.feature-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+.feature-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.feature-desc {
+    color: #666;
+    line-height: 1.6;
+}
+
+/* Buttons styling */
+.button-section {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin: 60px 0;
+    flex-wrap: wrap;
+}
+
+.stButton>button {
+    background: linear-gradient(135deg, #ff6600, #ff9933);
+    color: white;
+    font-weight: 700;
+    font-size: 1.1rem;
+    padding: 18px 40px;
+    border-radius: 50px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(255,102,0,0.3);
+    transition: all 0.3s ease;
+}
+
+.stButton>button:hover {
+    background: linear-gradient(135deg, #ff9933, #ffcc00);
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 15px 40px rgba(255,153,51,0.4);
+}
+
+/* Testimonial Section */
+.testimonial-section {
+    background: linear-gradient(135deg, rgba(255,248,220,0.8), rgba(255,240,200,0.8));
+    padding: 40px;
+    border-radius: 20px;
+    margin: 40px 0;
+    text-align: center;
+}
+
+.testimonial-text {
+    font-size: 1.2rem;
+    font-style: italic;
+    color: #555;
+    margin-bottom: 15px;
+}
+
+.testimonial-author {
+    font-weight: 600;
+    color: #ff6600;
+}
+
+/* Footer */
+.footer {
+    background: linear-gradient(135deg, #333, #555);
+    color: white;
+    padding: 40px 20px;
+    border-radius: 20px;
+    margin-top: 60px;
+}
+
+.footer-content {
+    text-align: center;
+}
+
+.social-links {
+    margin: 20px 0;
+}
+
+.social-icon {
+    display: inline-block;
+    margin: 0 10px;
+    font-size: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.social-icon:hover {
+    transform: scale(1.2);
+}
+
+.credits {
+    text-align: center;
+    color: rgba(255,255,255,0.8);
+    margin-top: 20px;
+    font-size: 0.95rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .animated-title {
+        font-size: 2rem;
     }
-    
-    /* Main App Background */
-    .stApp {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    .navbar {
+        flex-direction: column;
+        padding: 10px 20px;
     }
-    
-    div[data-testid="stAppViewContainer"] > .main {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        border-radius: 20px;
-        padding: 30px;
-        margin: 20px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    .navbar-links {
+        margin-top: 10px;
     }
-    
-    /* Header Styles */
-    h1, h2, h3 {
-        color: #ff6600 !important;
-        font-family: 'Poppins', sans-serif;
+    .stats-container {
+        grid-template-columns: 1fr;
     }
-    
-    .main-header {
-        background: linear-gradient(135deg, #ff6600, #ffcc00);
-        padding: 30px;
-        border-radius: 20px;
-        text-align: center;
-        margin-bottom: 30px;
-        box-shadow: 0 10px 30px rgba(255,102,0,0.3);
-    }
-    
-    .main-title {
-        color: white !important;
-        font-size: 3rem;
-        font-weight: 800;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-        margin-bottom: 10px;
-    }
-    
-    .main-subtitle {
-        color: rgba(255,255,255,0.95);
-        font-size: 1.2rem;
-        font-weight: 400;
-    }
-    
-    /* Metric Cards */
-    .metric-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
-        margin: 30px 0;
-    }
-    
-    .metric-card {
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        padding: 25px;
-        border-radius: 15px;
-        text-align: center;
-        color: white;
-        box-shadow: 0 8px 20px rgba(102,126,234,0.3);
-        transition: all 0.3s ease;
-    }
-    
-    .metric-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 30px rgba(102,126,234,0.4);
-    }
-    
-    .metric-value {
-        font-size: 2.5rem;
-        font-weight: 800;
-        margin-bottom: 5px;
-    }
-    
-    .metric-label {
-        font-size: 1rem;
-        opacity: 0.9;
-    }
-    
-    /* Sidebar Styling */
-    section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #667eea, #764ba2);
-    }
-    
-    section[data-testid="stSidebar"] > div {
-        background: rgba(255,255,255,0.1);
-        backdrop-filter: blur(10px);
-    }
-    
-    section[data-testid="stSidebar"] h1, 
-    section[data-testid="stSidebar"] h2, 
-    section[data-testid="stSidebar"] h3 {
-        color: white !important;
-    }
-    
-    section[data-testid="stSidebar"] label {
-        color: white !important;
-        font-weight: 600 !important;
-    }
-    
-    /* Tab Styling */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
-        background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
-        padding: 10px;
-        border-radius: 15px;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        background: white;
-        border-radius: 10px;
-        padding: 15px 25px;
-        font-weight: 600;
-        border: 2px solid transparent;
-        transition: all 0.3s ease;
-    }
-    
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #ff6600, #ffcc00);
-        color: white !important;
-        border-color: #ff6600;
-    }
-    
-    /* Package Cards */
-    .package-card {
-        background: white;
-        padding: 20px;
-        border-radius: 15px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        margin-bottom: 15px;
-        border-left: 5px solid #ff6600;
-        transition: all 0.3s ease;
-    }
-    
-    .package-card:hover {
-        transform: translateX(5px);
-        box-shadow: 0 8px 25px rgba(255,102,0,0.2);
-    }
-    
-    .package-title {
-        color: #ff6600;
-        font-size: 1.2rem;
-        font-weight: 700;
-        margin-bottom: 10px;
-    }
-    
-    .package-detail {
-        color: #666;
-        font-size: 0.95rem;
-        margin: 5px 0;
-    }
-    
-    /* Chart Containers */
-    .chart-container {
-        background: white;
-        padding: 25px;
-        border-radius: 15px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-        margin: 20px 0;
-    }
-    
-    /* Info Boxes */
-    .info-box {
-        background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
-        padding: 20px;
-        border-radius: 15px;
-        border-left: 5px solid #00acc1;
-        margin: 20px 0;
-        color: #00695c;
-    }
-    
-    .success-box {
-        background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-        padding: 20px;
-        border-radius: 15px;
-        border-left: 5px solid #4caf50;
-        margin: 20px 0;
-        color: #2e7d32;
-    }
-    
-    .warning-box {
-        background: linear-gradient(135deg, #fff3e0, #ffe0b2);
-        padding: 20px;
-        border-radius: 15px;
-        border-left: 5px solid #ff9800;
-        margin: 20px 0;
-        color: #e65100;
-    }
-    
-    /* Button Styling */
-    .stButton>button {
-        background: linear-gradient(135deg, #ff6600, #ff9933);
-        color: white;
-        font-weight: 700;
-        border-radius: 10px;
-        padding: 12px 30px;
-        border: none;
-        transition: all 0.3s ease;
-    }
-    
-    .stButton>button:hover {
-        background: linear-gradient(135deg, #ff9933, #ffcc00);
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(255,102,0,0.3);
-    }
-    
-    /* Dataframe Styling */
-    .dataframe {
-        border-radius: 10px !important;
-        overflow: hidden;
-    }
-    
-    /* Footer */
-    .footer {
-        text-align: center;
-        padding: 30px;
-        margin-top: 50px;
-        background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
-        border-radius: 20px;
-        color: #333;
-    }
-    </style>
+}
+</style>
 """, unsafe_allow_html=True)
 
-# --------------------------------------------------
-# Load Data Function
-# --------------------------------------------------
-@st.cache_data
-def load_data():
-    file_path = Path("hotel.csv")
-    
-    if not file_path.exists():
-        st.error("⚠️ hotel.csv file not found! Please ensure it's in the correct directory.")
-        st.stop()
-    
-    df = pd.read_csv(file_path, sep=",", encoding="utf-8", on_bad_lines="skip")
-    df.columns = [c.strip() for c in df.columns]
-    
-    # Ensure Destination column exists
-    if "Destination" not in df.columns and len(df.columns) > 3:
-        df = df.rename(columns={df.columns[3]: "Destination"})
-    
-    return df
+# --------------------- Clean Gradient Background ---------------------
+st.markdown("""
+<style>
+.stApp {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+</style>
+""", unsafe_allow_html=True)
 
-df = load_data()
+# --------------------- Navbar ---------------------
+st.markdown("""
+<div class="navbar">
+  <div class="navbar-brand">🇮🇳 Incredible India</div>
+  <div class="navbar-links">
+    <a class="nav-btn" href="#home">🏠 Home</a>
+    <a class="nav-btn" href="#gallery">🖼️ Gallery</a>
+    <a class="nav-btn" href="#features">✨ Features</a>
+    <a class="nav-btn" href="#explore">🧭 Explore</a>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
-# --------------------------------------------------
-# Filter India Packages
-# --------------------------------------------------
-india_df = df[df["Destination"].str.contains(
-    "India|Delhi|Goa|Munnar|Shimla|Kerala|Ooty|Jaipur|Agra|Manali|Darjeeling|Mysore|Amritsar|Udaipur|Coorg|Rameshwaram|Madurai",
-    case=False, na=False)].copy()
+# --------------------- Hero Section ---------------------
+st.markdown("""
+<div id="home" class="hero-section">
+    <div class="animated-title">🌏 Welcome to Incredible India 🇮🇳</div>
+    <div class="subtitle">A journey through nature, culture, history and flavors</div>
+    <div class="typewriter">
+        From the majestic Taj Mahal to the serene backwaters of Kerala — discover India's incredible diversity, 
+        rich heritage, and warm hospitality through our interactive tourism platform.
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-# Extract duration
-india_df["Duration_Days"] = pd.to_numeric(
-    india_df["Itinerary"].astype(str).str.extract(r'(\d+)')[0],
-    errors="coerce"
-)
+# --------------------- Stats Section ---------------------
+st.markdown("""
+<div class="stats-container">
+    <div class="stat-card">
+        <div class="stat-number">29</div>
+        <div class="stat-label">States & UTs</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">40+</div>
+        <div class="stat-label">UNESCO Sites</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">500+</div>
+        <div class="stat-label">Tourist Destinations</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">∞</div>
+        <div class="stat-label">Experiences</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-# --------------------------------------------------
-# Sidebar Filters
-# --------------------------------------------------
-with st.sidebar:
-    st.markdown("### 🎛️ Package Filters")
-    st.markdown("---")
-    
-    # Destination filter
-    all_destinations = ['All'] + sorted(india_df["Destination"].dropna().unique().tolist())
-    selected_destination = st.multiselect(
-        "📍 Select Destinations",
-        all_destinations,
-        default=['All']
-    )
-    
-    # Package type filter
-    all_types = ['All'] + sorted(india_df["Package Type"].dropna().unique().tolist())
-    selected_types = st.multiselect(
-        "🎯 Package Types",
-        all_types,
-        default=['All']
-    )
-    
-    # Duration filter
-    min_dur, max_dur = int(india_df["Duration_Days"].min()), int(india_df["Duration_Days"].max())
-    duration_range = st.slider(
-        "⏱️ Duration (Days)",
-        min_dur, max_dur, (min_dur, max_dur)
-    )
-    
-    st.markdown("---")
-    
-    # Quick stats in sidebar
-    st.markdown("### 📊 Quick Stats")
-    st.metric("Total Packages", len(india_df))
-    st.metric("Destinations", india_df["Destination"].nunique())
-    st.metric("Avg Duration", f"{india_df['Duration_Days'].mean():.1f} days")
-    
-    st.markdown("---")
-    
-    # Export option
-    if st.button("📥 Export Filtered Data", use_container_width=True):
-        csv = india_df.to_csv(index=False)
-        st.download_button(
-            label="Download CSV",
-            data=csv,
-            file_name="india_packages.csv",
-            mime="text/csv"
-        )
+# --------------------- Image Gallery ---------------------
+st.markdown("<div id='gallery' class='gallery-header'>📸 Explore Iconic Destinations</div>", unsafe_allow_html=True)
 
-# Apply filters
-filtered_df = india_df.copy()
-
-if 'All' not in selected_destination:
-    filtered_df = filtered_df[filtered_df["Destination"].isin(selected_destination)]
-
-if 'All' not in selected_types:
-    filtered_df = filtered_df[filtered_df["Package Type"].isin(selected_types)]
-
-filtered_df = filtered_df[
-    (filtered_df["Duration_Days"] >= duration_range[0]) &
-    (filtered_df["Duration_Days"] <= duration_range[1])
+monuments = [
+    ("Taj Mahal, Agra", "tajmahal.jpg", "The epitome of love and Mughal architecture"),
+    ("Goa Beach", "goa.jpg", "Sun, sand, and stunning coastal beauty"),
+    ("Jaipur Palace", "jaipur.jpg", "Royal heritage and vibrant culture"),
+    ("Himalayas", "himalayas.jpg", "Majestic peaks and spiritual serenity"),
+    ("Kerala Backwaters", "kerala.jpg", "Tranquil waters and lush greenery"),
 ]
 
-# --------------------------------------------------
-# Header
-# --------------------------------------------------
-st.markdown("""
-<div class="main-header">
-    <div class="main-title">🧳 Travel Package Intelligence Hub</div>
-    <div class="main-subtitle">Discover, Compare & Book Your Perfect Indian Adventure</div>
-</div>
-""", unsafe_allow_html=True)
+TARGET_WIDTH = 600
+TARGET_HEIGHT = 400
 
-# --------------------------------------------------
-# Key Metrics
-# --------------------------------------------------
-st.markdown("### 📊 Dashboard Overview")
+def load_and_resize(path, w=TARGET_WIDTH, h=TARGET_HEIGHT):
+    p = Path(path)
+    if not p.exists():
+        return None
+    img = Image.open(p).convert("RGB")
+    img = img.resize((w, h), Image.LANCZOS)
+    return img
 
-col1, col2, col3, col4, col5 = st.columns(5)
-
+# Row 1
+col1, col2 = st.columns(2, gap="large")
 with col1:
-    st.metric("📦 Total Packages", len(filtered_df), 
-              delta=f"{len(filtered_df) - len(india_df)} filtered" if len(filtered_df) != len(india_df) else None)
-
+    img = load_and_resize(monuments[0][1])
+    if img:
+        st.image(img, use_container_width=True)
+        st.markdown(f"<div class='img-caption'>🕌 {monuments[0][0]}<br><small>{monuments[0][2]}</small></div>", unsafe_allow_html=True)
 with col2:
-    st.metric("🗺️ Destinations", filtered_df["Destination"].nunique())
+    img = load_and_resize(monuments[1][1])
+    if img:
+        st.image(img, use_container_width=True)
+        st.markdown(f"<div class='img-caption'>🏖️ {monuments[1][0]}<br><small>{monuments[1][2]}</small></div>", unsafe_allow_html=True)
 
+# Row 2
+col3, col4 = st.columns(2, gap="large")
 with col3:
-    st.metric("🎯 Package Types", filtered_df["Package Type"].nunique())
-
+    img = load_and_resize(monuments[2][1])
+    if img:
+        st.image(img, use_container_width=True)
+        st.markdown(f"<div class='img-caption'>🏰 {monuments[2][0]}<br><small>{monuments[2][2]}</small></div>", unsafe_allow_html=True)
 with col4:
-    avg_duration = int(filtered_df["Duration_Days"].mean()) if not filtered_df.empty else 0
-    st.metric("⏱️ Avg Duration", f"{avg_duration} days")
+    img = load_and_resize(monuments[3][1])
+    if img:
+        st.image(img, use_container_width=True)
+        st.markdown(f"<div class='img-caption'>🏔️ {monuments[3][0]}<br><small>{monuments[3][2]}</small></div>", unsafe_allow_html=True)
 
-with col5:
-    popular_dest = filtered_df["Destination"].mode()[0] if not filtered_df.empty else "N/A"
-    st.metric("🏆 Top Destination", popular_dest[:15])
+# Row 3 - Featured image
+st.markdown("<br>", unsafe_allow_html=True)
+center_col_left, center_col_mid, center_col_right = st.columns([1, 2, 1])
+with center_col_mid:
+    img = load_and_resize(monuments[4][1], w=700, h=450)
+    if img:
+        st.image(img, use_container_width=True)
+        st.markdown(f"<div class='img-caption'>🛶 {monuments[4][0]}<br><small>{monuments[4][2]}</small></div>", unsafe_allow_html=True)
 
-st.markdown("---")
+# --------------------- Features Section ---------------------
+st.markdown("<div id='features' class='features-section'>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align:center; color:#333; margin-bottom:40px;'>✨ Platform Features</h2>", unsafe_allow_html=True)
 
-# --------------------------------------------------
-# Tabs for Insights
-# --------------------------------------------------
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-    "📊 Analytics", "🗺️ Destinations", "⏱️ Duration", 
-    "🔍 Package Explorer", "💬 Insights", "🎯 Recommendations", "📈 Trends"
-])
+feat_col1, feat_col2, feat_col3 = st.columns(3)
 
-# --------------------------------------------------
-# TAB 1 — Analytics Dashboard
-# --------------------------------------------------
-with tab1:
-    st.markdown("### 📊 Package Analytics Overview")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # Package Type Distribution
-        type_counts = filtered_df["Package Type"].value_counts()
-        fig = px.pie(
-            values=type_counts.values,
-            names=type_counts.index,
-            title="Package Type Distribution",
-            color_discrete_sequence=px.colors.sequential.RdBu,
-            hole=0.4
-        )
-        fig.update_layout(height=400)
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        # Top Destinations
-        top_dest = filtered_df["Destination"].value_counts().head(10)
-        fig = px.bar(
-            x=top_dest.values,
-            y=top_dest.index,
-            orientation='h',
-            title="Top 10 Destinations",
-            color=top_dest.values,
-            color_continuous_scale='Viridis'
-        )
-        fig.update_layout(height=400, showlegend=False)
-        st.plotly_chart(fig, use_container_width=True)
-    
-    # Duration Distribution
-    st.markdown("### ⏱️ Trip Duration Analysis")
-    
-    fig = go.Figure()
-    fig.add_trace(go.Histogram(
-        x=filtered_df["Duration_Days"],
-        nbinsx=15,
-        marker_color='#ff6600',
-        opacity=0.7
-    ))
-    fig.update_layout(
-        title="Distribution of Trip Durations",
-        xaxis_title="Number of Days",
-        yaxis_title="Number of Packages",
-        height=400,
-        template="plotly_white"
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-# --------------------------------------------------
-# TAB 2 — Destination Explorer
-# --------------------------------------------------
-with tab2:
-    st.markdown("### 🌆 Destination Deep Dive")
-    
-    # Destination selector
-    selected_dest = st.selectbox(
-        "Select a destination to explore",
-        sorted(filtered_df["Destination"].unique())
-    )
-    
-    dest_packages = filtered_df[filtered_df["Destination"] == selected_dest]
-    
-    # Destination metrics
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("Total Packages", len(dest_packages))
-    with col2:
-        st.metric("Package Types", dest_packages["Package Type"].nunique())
-    with col3:
-        st.metric("Avg Duration", f"{dest_packages['Duration_Days'].mean():.1f} days")
-    with col4:
-        st.metric("Duration Range", f"{dest_packages['Duration_Days'].min():.0f}-{dest_packages['Duration_Days'].max():.0f} days")
-    
-    st.markdown("---")
-    
-    # Package breakdown
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown(f"#### 📦 Available Package Types in {selected_dest}")
-        type_dist = dest_packages["Package Type"].value_counts()
-        fig = px.bar(
-            x=type_dist.index,
-            y=type_dist.values,
-            color=type_dist.values,
-            color_continuous_scale='Sunset'
-        )
-        fig.update_layout(showlegend=False, height=350)
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        st.markdown(f"#### ⏱️ Duration Options for {selected_dest}")
-        dur_counts = dest_packages["Duration_Days"].value_counts().sort_index()
-        fig = px.line(
-            x=dur_counts.index,
-            y=dur_counts.values,
-            markers=True
-        )
-        fig.update_layout(
-            xaxis_title="Days",
-            yaxis_title="Number of Packages",
-            height=350
-        )
-        st.plotly_chart(fig, use_container_width=True)
-    
-    # Sample packages
-    st.markdown(f"#### 🎯 Featured Packages for {selected_dest}")
-    sample_packages = dest_packages.head(5)
-    
-    for idx, row in sample_packages.iterrows():
-        with st.expander(f"📦 {row['Package Name']}", expanded=False):
-            col1, col2 = st.columns([2, 1])
-            with col1:
-                st.markdown(f"**Type:** {row['Package Type']}")
-                st.markdown(f"**Duration:** {row['Duration_Days']:.0f} days")
-                st.markdown(f"**Itinerary:** {row['Itinerary']}")
-            with col2:
-                if pd.notna(row.get('Hotel Details')):
-                    st.markdown(f"**🏨 Hotel:** {row['Hotel Details'][:50]}")
-                if pd.notna(row.get('Sightseeing Places Covered')):
-                    st.markdown(f"**📍 Sightseeing:** {row['Sightseeing Places Covered'][:100]}")
-
-# --------------------------------------------------
-# TAB 3 — Duration Analysis
-# --------------------------------------------------
-with tab3:
-    st.markdown("### ⏱️ Find Packages by Duration")
-    
-    # Duration distribution chart
-    st.markdown("#### 📊 Package Availability by Duration")
-    dur_count = filtered_df["Duration_Days"].value_counts().sort_index()
-    
-    fig = go.Figure()
-    fig.add_trace(go.Bar(
-        x=dur_count.index,
-        y=dur_count.values,
-        marker=dict(
-            color=dur_count.values,
-            colorscale='Viridis',
-            showscale=True
-        ),
-        text=dur_count.values,
-        textposition='auto'
-    ))
-    fig.update_layout(
-        xaxis_title="Duration (Days)",
-        yaxis_title="Number of Packages",
-        height=400,
-        template="plotly_white"
-    )
-    st.plotly_chart(fig, use_container_width=True)
-    
-    st.markdown("---")
-    
-    # Duration selector
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        days = st.slider("🔍 Select Trip Duration (Days)", 
-                        int(filtered_df["Duration_Days"].min()), 
-                        int(filtered_df["Duration_Days"].max()), 
-                        5)
-    
-    with col2:
-        st.metric("Packages Available", len(filtered_df[filtered_df["Duration_Days"] == days]))
-    
-    # Filter by duration
-    result_df = filtered_df[filtered_df["Duration_Days"] == days]
-    
-    if not result_df.empty:
-        st.success(f"✅ Found {len(result_df)} packages for **{days}-day trips**")
-        
-        # Group by destination
-        dest_counts = result_df["Destination"].value_counts()
-        
-        st.markdown(f"#### 🗺️ Available Destinations ({days} days)")
-        
-        col1, col2 = st.columns([1, 2])
-        
-        with col1:
-            for dest, count in dest_counts.items():
-                st.markdown(f"**{dest}**: {count} package(s)")
-        
-        with col2:
-            fig = px.pie(
-                values=dest_counts.values,
-                names=dest_counts.index,
-                hole=0.4,
-                color_discrete_sequence=px.colors.sequential.Sunset
-            )
-            fig.update_layout(height=300)
-            st.plotly_chart(fig, use_container_width=True)
-        
-        # Display packages
-        st.markdown("#### 📦 Package Details")
-        display_cols = ["Package Name", "Package Type", "Destination", "Itinerary", "Hotel Details", "Sightseeing Places Covered"]
-        available_cols = [col for col in display_cols if col in result_df.columns]
-        
-        st.dataframe(
-            result_df[available_cols].sort_values(by="Destination"),
-            use_container_width=True,
-            height=400
-        )
-    else:
-        st.warning("⚠️ No packages found for that duration. Try adjusting your filters.")
-
-# --------------------------------------------------
-# TAB 4 — Advanced Package Explorer
-# --------------------------------------------------
-with tab4:
-    st.markdown("### 🔍 Advanced Package Explorer")
-    
-    # Multi-criteria search
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        search_dest = st.multiselect(
-            "🗺️ Destinations",
-            options=sorted(filtered_df["Destination"].unique()),
-            default=[]
-        )
-    
-    with col2:
-        search_type = st.multiselect(
-            "🎯 Package Types",
-            options=sorted(filtered_df["Package Type"].dropna().unique()),
-            default=[]
-        )
-    
-    with col3:
-        search_duration = st.multiselect(
-            "⏱️ Duration (days)",
-            options=sorted(filtered_df["Duration_Days"].dropna().unique().astype(int)),
-            default=[]
-        )
-    
-    # Apply search filters
-    search_df = filtered_df.copy()
-    
-    if search_dest:
-        search_df = search_df[search_df["Destination"].isin(search_dest)]
-    if search_type:
-        search_df = search_df[search_df["Package Type"].isin(search_type)]
-    if search_duration:
-        search_df = search_df[search_df["Duration_Days"].isin(search_duration)]
-    
-    st.markdown(f"### 📊 Search Results: {len(search_df)} packages found")
-    
-    if not search_df.empty:
-        # Sort options
-        sort_by = st.selectbox(
-            "Sort by:",
-            ["Package Name", "Destination", "Duration_Days", "Package Type"]
-        )
-        
-        search_df = search_df.sort_values(by=sort_by)
-        
-        # Display results as cards
-        for idx, row in search_df.iterrows():
-            st.markdown(f"""
-            <div class="package-card">
-                <div class="package-title">🎯 {row['Package Name']}</div>
-                <div class="package-detail">📍 <b>Destination:</b> {row['Destination']}</div>
-                <div class="package-detail">🎨 <b>Type:</b> {row['Package Type']}</div>
-                <div class="package-detail">⏱️ <b>Duration:</b> {row['Duration_Days']:.0f} days</div>
-                <div class="package-detail">📋 <b>Itinerary:</b> {row['Itinerary']}</div>
-            </div>
-            """, unsafe_allow_html=True)
-    else:
-        st.info("No packages match your search criteria. Try adjusting your filters.")
-
-# --------------------------------------------------
-# TAB 5 — Word Cloud & Insights
-# --------------------------------------------------
-with tab5:
-    st.markdown("### 💬 Popular Attractions & Insights")
-    
-    # Word Cloud
-    text = " ".join(filtered_df["Sightseeing Places Covered"].dropna().astype(str))
-    
-    if text.strip():
-        wordcloud = WordCloud(
-            width=1200, 
-            height=500, 
-            background_color="white", 
-            colormap="plasma",
-            max_words=100
-        ).generate(text)
-        
-        fig, ax = plt.subplots(figsize=(15, 7))
-        ax.imshow(wordcloud, interpolation="bilinear")
-        ax.axis("off")
-        ax.set_title("Most Mentioned Sightseeing Spots", fontsize=18, fontweight='bold')
-        st.pyplot(fig)
-        plt.close()
-    
-    st.markdown("---")
-    
-    # Key insights
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("#### 🏆 Top 10 Most Popular Destinations")
-        top_dests = filtered_df["Destination"].value_counts().head(10)
-        fig = px.bar(
-            x=top_dests.values,
-            y=top_dests.index,
-            orientation='h',
-            color=top_dests.values,
-            color_continuous_scale='Viridis'
-        )
-        fig.update_layout(showlegend=False, height=400)
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        st.markdown("#### 📊 Package Type Popularity")
-        type_counts = filtered_df["Package Type"].value_counts().head(10)
-        fig = px.pie(
-            values=type_counts.values,
-            names=type_counts.index,
-            hole=0.4,
-            color_discrete_sequence=px.colors.sequential.Sunset
-        )
-        fig.update_layout(height=400)
-        st.plotly_chart(fig, use_container_width=True)
-
-# --------------------------------------------------
-# TAB 6 — AI Recommendations
-# --------------------------------------------------
-with tab6:
-    st.markdown("### 🎯 Personalized Recommendations")
-    
+with feat_col1:
     st.markdown("""
-    <div class="info-box">
-        <h4>🤖 AI-Powered Package Suggestions</h4>
-        <p>Tell us your preferences, and we'll recommend the perfect packages for you!</p>
+    <div class='feature-card'>
+        <div class='feature-icon'>📊</div>
+        <div class='feature-title'>Interactive Analytics</div>
+        <div class='feature-desc'>Explore tourism data with dynamic charts, growth trends, and state-wise analysis</div>
     </div>
     """, unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        pref_duration = st.selectbox(
-            "Preferred Trip Length",
-            ["Weekend (2-4 days)", "Week-long (5-7 days)", "Extended (8+ days)", "Flexible"]
-        )
-    
-    with col2:
-        pref_type = st.multiselect(
-            "Interests",
-            filtered_df["Package Type"].dropna().unique(),
-            default=[]
-        )
-    
-    with col3:
-        budget = st.select_slider(
-            "Budget Level",
-            options=["Budget", "Moderate", "Premium", "Luxury"]
-        )
-    
-    if st.button("🔮 Get Recommendations", use_container_width=True):
-        st.markdown("---")
-        st.markdown("### ✨ Your Personalized Recommendations")
-        
-        # Filter based on preferences
-        rec_df = filtered_df.copy()
-        
-        if pref_duration == "Weekend (2-4 days)":
-            rec_df = rec_df[rec_df["Duration_Days"].between(2, 4)]
-        elif pref_duration == "Week-long (5-7 days)":
-            rec_df = rec_df[rec_df["Duration_Days"].between(5, 7)]
-        elif pref_duration == "Extended (8+ days)":
-            rec_df = rec_df[rec_df["Duration_Days"] >= 8]
-        
-        if pref_type:
-            rec_df = rec_df[rec_df["Package Type"].isin(pref_type)]
-        
-        # Get top recommendations
-        if not rec_df.empty:
-            top_recs = rec_df.sample(min(5, len(rec_df)))
-            
-            for idx, (_, row) in enumerate(top_recs.iterrows(), 1):
-                with st.expander(f"🌟 Recommendation #{idx}: {row['Package Name']}", expanded=True):
-                    col1, col2 = st.columns([2, 1])
-                    
-                    with col1:
-                        st.markdown(f"**📍 Destination:** {row['Destination']}")
-                        st.markdown(f"**🎨 Package Type:** {row['Package Type']}")
-                        st.markdown(f"**⏱️ Duration:** {row['Duration_Days']:.0f} days")
-                        st.markdown(f"**📋 Itinerary:** {row['Itinerary']}")
-                    
-                    with col2:
-                        st.markdown("**✅ Why This Package?**")
-                        st.info(f"• Matches your {pref_duration.lower()} preference\n• Perfect for {budget} budget")
-                        
-                        if pd.notna(row.get('Sightseeing Places Covered')):
-                            st.markdown(f"**🗺️ Highlights:** {row['Sightseeing Places Covered'][:100]}...")
-        else:
-            st.warning("No packages match your exact criteria. Try adjusting your preferences!")
 
-# --------------------------------------------------
-# TAB 7 — Trends & Analytics
-# --------------------------------------------------
-with tab7:
-    st.markdown("### 📈 Package Trends & Market Analysis")
-    
-    # Duration trends
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("#### 📊 Duration Distribution by Package Type")
-        
-        duration_by_type = filtered_df.groupby(['Package Type', 'Duration_Days']).size().reset_index(name='count')
-        
-        fig = px.scatter(
-            duration_by_type,
-            x='Duration_Days',
-            y='Package Type',
-            size='count',
-            color='count',
-            color_continuous_scale='Viridis'
-        )
-        fig.update_layout(height=400)
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        st.markdown("#### 🗺️ Destination Diversity by Duration")
-        
-        dest_by_duration = filtered_df.groupby('Duration_Days')['Destination'].nunique().reset_index()
-        
-        fig = px.line(
-            dest_by_duration,
-            x='Duration_Days',
-            y='Destination',
-            markers=True,
-            color_discrete_sequence=['#ff6600']
-        )
-        fig.update_layout(
-            xaxis_title="Trip Duration (Days)",
-            yaxis_title="Number of Unique Destinations",
-            height=400
-        )
-        st.plotly_chart(fig, use_container_width=True)
-    
-    # Market insights
-    st.markdown("---")
-    st.markdown("### 💡 Market Insights")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.markdown("""
-        <div class="success-box">
-            <h4>🎯 Most Versatile Destination</h4>
-            <p><b>{}</b></p>
-            <p>Offers {} different package types</p>
-        </div>
-        """.format(
-            filtered_df.groupby('Destination')['Package Type'].nunique().idxmax(),
-            filtered_df.groupby('Destination')['Package Type'].nunique().max()
-        ), unsafe_allow_html=True)
-    
-    with col2:
-        avg_dur = filtered_df['Duration_Days'].mean()
-        st.markdown(f"""
-        <div class="info-box">
-            <h4>⏱️ Average Trip Duration</h4>
-            <p><b>{avg_dur:.1f} days</b></p>
-            <p>Most packages range 3-7 days</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        most_common_type = filtered_df['Package Type'].mode()[0] if not filtered_df.empty else "N/A"
-        st.markdown(f"""
-        <div class="warning-box">
-            <h4>🏆 Most Popular Type</h4>
-            <p><b>{most_common_type}</b></p>
-            <p>Traveler favorite category</p>
-        </div>
-        """, unsafe_allow_html=True)
+with feat_col2:
+    st.markdown("""
+    <div class='feature-card'>
+        <div class='feature-icon'>🗺️</div>
+        <div class='feature-title'>Heat Maps</div>
+        <div class='feature-desc'>Visualize visitor distribution across India with interactive geographical maps</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-# --------------------------------------------------
-# Footer
-# --------------------------------------------------
-st.markdown("---")
+with feat_col3:
+    st.markdown("""
+    <div class='feature-card'>
+        <div class='feature-icon'>🧳</div>
+        <div class='feature-title'>Smart Packages</div>
+        <div class='feature-desc'>Find perfect travel packages based on duration, destination, and preferences</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("</div>", unsafe_allow_html=True)
+
+# --------------------- Testimonial ---------------------
 st.markdown("""
-<div class="footer">
-    <h3 style="color:#ff6600;">🧳 India Travel Packages Intelligence Platform</h3>
-    <p style="margin:15px 0;">Discover • Compare • Book Your Dream Indian Adventure</p>
-    <p style="color:#666; margin-top:20px;">
-        Developed with ❤️ by <b>Aniket Bharti</b> • Data Analytics & Visualization Project
-    </p>
-    <p style="color:#999; font-size:0.9rem; margin-top:10px;">
-        © 2025 • Powered by Streamlit & Python
-    </p>
+<div class="testimonial-section">
+    <div class="testimonial-text">
+        "India is the cradle of the human race, the birthplace of human speech, the mother of history, 
+        the grandmother of legend, and the great grandmother of tradition."
+    </div>
+    <div class="testimonial-author">— Mark Twain</div>
 </div>
 """, unsafe_allow_html=True)
 
+# --------------------- CTA Buttons ---------------------
+st.markdown("<div id='explore'></div>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align:center; color:#333; margin:50px 0 30px 0;'>🧭 Start Your Journey</h2>", unsafe_allow_html=True)
+
+st.markdown("<div class='button-section'>", unsafe_allow_html=True)
+col1, col2 = st.columns(2)
+with col1:
+    if st.button("📊 Tourism Analytics Dashboard", use_container_width=True):
+        st.switch_page("pages/1_Tourism_Dashboard.py")
+with col2:
+    if st.button("🧳 Travel Packages Explorer", use_container_width=True):
+        st.switch_page("pages/2_Travel_Packages_Insights.py")
+st.markdown("</div>", unsafe_allow_html=True)
+
+# --------------------- Footer ---------------------
+st.markdown("""
+<div class="footer">
+    <div class="footer-content">
+        <h3 style="margin-bottom:20px;">🇮🇳 Incredible India Tourism Platform</h3>
+        <p style="margin-bottom:20px;">Explore. Discover. Experience.</p>
+        <div class="social-links">
+            <span class="social-icon">📧</span>
+            <span class="social-icon">🌐</span>
+            <span class="social-icon">📱</span>
+        </div>
+        <div class="credits">
+            Developed with ❤️ by <b>Aniket Bharti</b> • Data Visualization & Analysis Project • © 2025
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
